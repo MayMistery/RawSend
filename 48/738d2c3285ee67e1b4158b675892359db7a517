@@ -1,0 +1,35 @@
+Checks/RawSendChecks.swift
+  s_081435f02f32bb::t_494ef1ff14ac57 161-179
+Makefile
+  s_081435f02f32bb::t_9697b3dde798ec 36,39
+Sources/Core/ErrorLogStore.swift
+  s_081435f02f32bb::t_0072c91d51f88b 1-62
+Sources/Core/Localization.swift
+  s_081435f02f32bb::t_ab969212523e74 57,100,197,240,317,360,437,480
+Sources/Core/RequestSender.swift
+  s_081435f02f32bb::t_e2a47cc2fed032 80-83,116-123,126-140
+Sources/Features/Response/ResponsePanelView.swift
+  s_081435f02f32bb::t_08259607cb4a8c 2,80-94,171-180
+Sources/Models/HTTPResponse.swift
+  s_081435f02f32bb::t_fa2c535024116a 3-61,73,84-90,99,103-104,110
+Tests/RawSendTests/ErrorLoggingTests.swift
+  s_081435f02f32bb::t_620952410908ab 1-62
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.5",
+  "base_commit_sha": "48738d2c3285ee67e1b4158b675892359db7a517",
+  "prompts": {},
+  "sessions": {
+    "s_081435f02f32bb": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f1142-6528-72e3-97b7-f53a449460ad",
+        "model": "unknown"
+      },
+      "human_author": "MayMistery <44127878+MayMistery@users.noreply.github.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
