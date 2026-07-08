@@ -1,0 +1,53 @@
+Makefile
+  s_081435f02f32bb::t_0561e45df5ae52 44
+Package.swift
+  s_081435f02f32bb::t_9a59ef9ee0dd14 7-9,13-15
+README.md
+  s_081435f02f32bb::t_0e5f4e6b298174 26,84
+README.zh-CN.md
+  s_081435f02f32bb::t_1b7b338f654f79 26,84
+Sources/App/AppState.swift
+  s_081435f02f32bb::t_819d53c231ed35 37,40,44,137,309-318,339-356
+Sources/App/ContentView.swift
+  s_081435f02f32bb::t_66ecdc9b412176 30
+Sources/Core/HTTPMessageRanges.swift
+  s_081435f02f32bb::t_ec33f98ea789b8 1-22
+Sources/Core/JSONSyntaxHighlighter.swift
+  s_081435f02f32bb::t_0340f0dae3fadf 1-168
+Sources/Core/SearchEngine.swift
+  s_081435f02f32bb::t_848f3756f715b9 2,10-21,23-36,51-87
+Sources/Features/Editor/RequestEditorView.swift
+  s_081435f02f32bb::t_77b2ae7d822948 18,24,46,63,66-71,120,395-398,434,446-454,522-539
+Sources/Features/Response/ResponsePanelView.swift
+  s_081435f02f32bb::t_8cd4906135688d 74-77,125,128-129,131,143,150,153,156-159
+Sources/Features/Shared/HighlightedTextView.swift
+  s_081435f02f32bb::t_d84c7494a4ad2e 7,42,54,75-81,105-111,123-125,139-156
+Sources/Features/Shared/SearchToolbarView.swift
+  s_081435f02f32bb::t_e81cf36c8c82eb 8,22-26,43-51
+Sources/Features/Shared/TextViewNavigator.swift
+  s_081435f02f32bb::t_204c8b0179bcf4 1-23
+Sources/Models/SearchMatch.swift
+  s_081435f02f32bb::t_bec44d0fceee76 7-8
+Tests/RawSendTests/JSONSyntaxHighlighterTests.swift
+  s_081435f02f32bb::t_0338a96b1f0ea0 1-31
+Tests/RawSendTests/SearchEngineTests.swift
+  s_081435f02f32bb::t_2a3b5a59a868dc 30-47
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "c724b86411c0f296939f1f98f2b84e7c098a307f",
+  "prompts": {},
+  "sessions": {
+    "s_081435f02f32bb": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f1142-6528-72e3-97b7-f53a449460ad",
+        "model": "unknown"
+      },
+      "human_author": "MayMistery <44127878+MayMistery@users.noreply.github.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
