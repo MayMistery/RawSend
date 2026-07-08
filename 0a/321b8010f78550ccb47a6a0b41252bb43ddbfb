@@ -1,0 +1,51 @@
+Package.swift
+  s_081435f02f32bb::t_113be2322eb6d9 8,14
+README.md
+  s_081435f02f32bb::t_6e422a98ddde67 26,54-59,90
+README.zh-CN.md
+  s_081435f02f32bb::t_ced03e2058d651 26,54-59,90
+Sources/App/AppState.swift
+  s_081435f02f32bb::t_db54f2b9a97619 45-47,175-176,194,224,320-348,370,373-399,577-583,586-593
+Sources/Core/JSONSyntaxHighlighter.swift
+  s_081435f02f32bb::t_100c99f986f252 17-23,28,35
+Sources/Core/PerformanceLogStore.swift
+  s_081435f02f32bb::t_38c429f7731047 1-105
+Sources/Core/SearchEngine.swift
+  s_081435f02f32bb::t_062af4086974cd 2,5-7,10,14-22,24,30,32-33
+Sources/Core/SearchWorker.swift
+  s_081435f02f32bb::t_6beed0775956f0 1-17
+Sources/Features/Editor/RequestEditorView.swift
+  s_081435f02f32bb::t_21f36ba85358af 189-191,353,399,452-460,463-464,469-480
+Sources/Features/Shared/HighlightedTextView.swift
+  s_081435f02f32bb::t_fd25d1feb0077a 74-76,85,109-110,129-137,151-162
+Sources/Models/HTTPResponse.swift
+  s_081435f02f32bb::t_f04b21dffbb890 74,101,109-147,150-152
+Sources/Models/HistoryItem.swift
+  s_081435f02f32bb::t_4df15d45af6826 3-18,28-29,55-61
+Sources/Storage/PersistenceManager.swift
+  s_081435f02f32bb::t_d0cfadc1fad817 68,74-81
+Tests/RawSendTests/HistoryResponseTests.swift
+  s_081435f02f32bb::t_099506b2df9a48 1-22
+Tests/RawSendTests/PerformanceLogStoreTests.swift
+  s_081435f02f32bb::t_9c000feed9f4c5 1-42
+Tests/RawSendTests/SearchEngineTests.swift
+  s_081435f02f32bb::t_1a2c5f57a69f86 48-59
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "0a321b8010f78550ccb47a6a0b41252bb43ddbfb",
+  "prompts": {},
+  "sessions": {
+    "s_081435f02f32bb": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f1142-6528-72e3-97b7-f53a449460ad",
+        "model": "unknown"
+      },
+      "human_author": "MayMistery <44127878+MayMistery@users.noreply.github.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
