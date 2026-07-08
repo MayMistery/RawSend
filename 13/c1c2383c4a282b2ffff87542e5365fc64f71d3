@@ -1,0 +1,27 @@
+Sources/Core/TextHighlightPlan.swift
+  s_081435f02f32bb::t_ae8158e1f00b6a 1-29
+Sources/Features/Shared/HighlightedTextView.swift
+  s_081435f02f32bb::t_d21c0940ef8717 74-76,90-91,93-96,100-106,124-185,205-207
+Tests/RawSendTests/HighlightedTextViewPerformanceTests.swift
+  s_081435f02f32bb::t_208d73dc085b47 1-35
+Tests/RawSendTests/TextHighlightPlanTests.swift
+  s_081435f02f32bb::t_d35efcbce1bed9 1-29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "13c1c2383c4a282b2ffff87542e5365fc64f71d3",
+  "prompts": {},
+  "sessions": {
+    "s_081435f02f32bb": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f1142-6528-72e3-97b7-f53a449460ad",
+        "model": "unknown"
+      },
+      "human_author": "MayMistery <44127878+MayMistery@users.noreply.github.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
