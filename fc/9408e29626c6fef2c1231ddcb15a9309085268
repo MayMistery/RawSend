@@ -1,0 +1,21 @@
+Makefile
+  s_081435f02f32bb::t_2351cba4f8bc1f 106-110,153-157
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.5",
+  "base_commit_sha": "fc9408e29626c6fef2c1231ddcb15a9309085268",
+  "prompts": {},
+  "sessions": {
+    "s_081435f02f32bb": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f1142-6528-72e3-97b7-f53a449460ad",
+        "model": "unknown"
+      },
+      "human_author": "MayMistery <44127878+MayMistery@users.noreply.github.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
