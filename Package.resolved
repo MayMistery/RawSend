@@ -1,0 +1,14 @@
+{
+  "pins" : [
+    {
+      "identity" : "findfaster",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/finnvoor/FindFaster.git",
+      "state" : {
+        "revision" : "141708a445e438d8019c2031bca3a639db11d0bc",
+        "version" : "1.1.1"
+      }
+    }
+  ],
+  "version" : 2
+}
