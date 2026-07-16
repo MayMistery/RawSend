@@ -1,0 +1,65 @@
+Makefile
+  s_36c6d09f9d7591::t_806a1acb3b7101 3 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a589df6be259e4954852371","tool_type":"agent","tool_id":"Edit","line_ranges":[{"Single":3}]}]}
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "2ffbcc13d7352c97c5ba449a63abd62f66005921",
+  "prompts": {},
+  "humans": {
+    "h_85ed6c5be26be9": {
+      "author": "MayMistery <44127878+MayMistery@users.noreply.github.com>"
+    }
+  },
+  "sessions": {
+    "s_36c6d09f9d7591": {
+      "agent_id": {
+        "tool": "trae",
+        "id": "6a4f84866d258840d6ff7316",
+        "model": "c_o_new__max"
+      },
+      "human_author": "MayMistery <44127878+MayMistery@users.noreply.github.com>"
+    }
+  },
+  "attestation_metadata": {
+    "Makefile": [
+      {
+        "hash": "s_36c6d09f9d7591::t_806a1acb3b7101",
+        "line_ranges": [
+          {
+            "Single": 3
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a589df6be259e4954852371",
+            "tool_type": "agent",
+            "tool_id": "Edit",
+            "line_ranges": [
+              {
+                "Single": 3
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "remote_transcripts": {
+    "s_36c6d09f9d7591": {
+      "tool": "trae",
+      "conversation_id": "6a4f84866d258840d6ff7316",
+      "session_id": "6a4f84866d258840d6ff7316",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_36c6d09f9d7591::t_806a1acb3b7101": {
+      "tool": "trae",
+      "conversation_id": "6a4f84866d258840d6ff7316",
+      "session_id": "6a4f84866d258840d6ff7316",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    }
+  }
+}
