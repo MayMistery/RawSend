@@ -43,6 +43,7 @@ The result is a focused loop: paste a request, strike what should not be sent, r
 ## Highlights
 
 - **In-place raw editing**: operate directly on the original HTTP text. Headers and URL parameters do not move into a separate form that can drift from the raw request.
+- **Paste-a-cURL import**: paste a `curl` command into the request editor and it is converted to a ready-to-send raw request automatically, with the HTTP/HTTPS toggle set from the URL scheme. Wide flag coverage — `-X`, `-H`, `-d`/`--data*`, `--data-urlencode`, `--json`, `-F`/`--form` (multipart), `-u`, `--oauth2-bearer`, `-b`, `-A`, `-e`, `-r`, `-G`, `-I`, `--compressed`, `--url` — plus multi-line `\`/`^` continuations and `$'...'` quoting from DevTools, Postman, and Insomnia.
 - **Sensitive-field strikeout**: manually strike headers and query parameters, or strike by configurable keywords. Struck fields stay visible but are skipped when sending and exporting cURL.
 - **Full-text search without UI stalls**: request and response search use [FindFaster](https://github.com/finnvoor/FindFaster), with highlighted matches, next/previous navigation, and line/column positions.
 - **Response readability**: status line, headers, JSON, and HTML are highlighted in the raw response view. HTML responses can also be opened in a built-in preview.

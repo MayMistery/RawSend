@@ -55,7 +55,8 @@ struct RequestEditorView: View {
                 toggleQueryParameterStrike: { appState.toggleQueryParameterStrike($0) },
                 addRedactionKeyword: { appState.addRedactionKeyword($0) },
                 addImportantHeaderName: { appState.addImportantHeaderName($0) },
-                markActive: { appState.activateRequestSearchScope() }
+                markActive: { appState.activateRequestSearchScope() },
+                applyCurlScheme: { appState.applyDetectedScheme($0) }
             )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -113,6 +114,41 @@ private struct RequestHeaderSummaryView: View {
     }
 }
 
+/// 支持“粘贴 curl 自动转换”的 NSTextView。
+///
+/// 当剪贴板内容是一条 curl 命令时，粘贴会插入转换后的 raw HTTP 报文，
+/// 并通过 `onCurlPaste` 回传探测到的协议（"http" / "https" / ""）。
+final class CurlPasteTextView: NSTextView {
+    /// 成功粘贴并转换 curl 后回调，参数为探测到的协议（无法确定时为空串）
+    var onCurlPaste: ((String) -> Void)?
+
+    override func paste(_ sender: Any?) {
+        if handleCurlPaste() { return }
+        super.paste(sender)
+    }
+
+    override func pasteAsPlainText(_ sender: Any?) {
+        if handleCurlPaste() { return }
+        super.pasteAsPlainText(sender)
+    }
+
+    /// 若剪贴板是 curl 命令则转换并插入，返回是否已处理
+    private func handleCurlPaste() -> Bool {
+        guard let clipboard = NSPasteboard.general.string(forType: .string),
+              CurlConverter.isCurlCommand(clipboard),
+              let result = CurlConverter.convert(clipboard) else {
+            return false
+        }
+        let range = selectedRange()
+        if shouldChangeText(in: range, replacementString: result.raw) {
+            textStorage?.replaceCharacters(in: range, with: result.raw)
+            didChangeText()
+        }
+        onCurlPaste?(result.scheme ?? "")
+        return true
+    }
+}
+
 /// NSTextView 封装，支持语法高亮和自动补全
 struct RawTextEditor: NSViewRepresentable {
     @Binding var text: String
@@ -130,6 +166,7 @@ struct RawTextEditor: NSViewRepresentable {
     var addRedactionKeyword: (String) -> Void = { _ in }
     var addImportantHeaderName: (String) -> Void = { _ in }
     var markActive: () -> Void = {}
+    var applyCurlScheme: (String) -> Void = { _ in }
 
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
@@ -137,7 +174,12 @@ struct RawTextEditor: NSViewRepresentable {
 
     func makeNSView(context: Context) -> NSScrollView {
         let scrollView = NSScrollView()
-        let textView = NSTextView()
+        let textView = CurlPasteTextView()
+
+        // 粘贴 curl 命令时自动转换为 raw 请求，并按 URL 协议设置发送开关
+        textView.onCurlPaste = { [weak coordinator = context.coordinator] scheme in
+            coordinator?.parent.applyCurlScheme(scheme)
+        }
 
         textView.isEditable = true
         textView.isSelectable = true

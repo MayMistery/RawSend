@@ -167,6 +167,20 @@ class AppState: ObservableObject {
         undefinedVars = VariableEngine.undefinedVariables(rawText, environment: selectedEnvironment)
     }
 
+    /// 根据粘贴/转换的 curl URL 协议，自动设置 HTTP / HTTPS 发送开关
+    func applyDetectedScheme(_ scheme: String) {
+        switch scheme.lowercased() {
+        case "https":
+            sendHTTPS = true
+            sendHTTP = false
+        case "http":
+            sendHTTP = true
+            sendHTTPS = false
+        default:
+            break // 未知协议：保持现状
+        }
+    }
+
     // MARK: - 发送请求
 
     func sendRequest(followRedirectsOverride: Bool? = nil) {
@@ -180,14 +194,16 @@ class AppState: ObservableObject {
         responseSearchMatches = []
         selectedResponseSearchIndex = nil
 
-        // 检查是否为 cURL 命令
+        // 检查是否为 cURL 命令（发送前的兜底转换）
         var textToSend = rawText
         if CurlConverter.isCurlCommand(rawText) {
-            if let converted = CurlConverter.curlToRaw(rawText) {
-                textToSend = converted
-                rawText = converted
+            if let converted = CurlConverter.convert(rawText) {
+                textToSend = converted.raw
+                rawText = converted.raw
+                if let scheme = converted.scheme { applyDetectedScheme(scheme) }
             }
         }
+        guard sendHTTP || sendHTTPS else { isSending = false; return }
 
         guard let request = RequestParser.parse(textToSend) else {
             isSending = false

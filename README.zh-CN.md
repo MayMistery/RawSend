@@ -43,6 +43,7 @@ RawSend 刻意保持更小的形态：
 ## 关键能力
 
 - **原始请求就地编辑**：直接操作原始 HTTP 文本，header 和 URL 参数不会被拆到另一个容易和 raw request 脱节的表单里。
+- **粘贴 curl 即转换**：把 `curl` 命令粘贴进请求编辑器会自动转换成可直接发送的 raw request，并根据 URL 协议自动设置 HTTP/HTTPS 开关。覆盖面广——`-X`、`-H`、`-d`/`--data*`、`--data-urlencode`、`--json`、`-F`/`--form`（multipart）、`-u`、`--oauth2-bearer`、`-b`、`-A`、`-e`、`-r`、`-G`、`-I`、`--compressed`、`--url`——并支持多行 `\`/`^` 续行与 `$'...'` 引用，兼容 DevTools、Postman、Insomnia 复制出的写法。
 - **敏感字段划掉**：支持手动划掉 header 和 query 参数，也支持按可配置关键词批量划掉。被划掉的字段仍可见，但发包和导出 cURL 时会跳过。
 - **不卡 UI 的全文搜索**：请求和响应搜索使用 [FindFaster](https://github.com/finnvoor/FindFaster)，支持匹配高亮、上/下一个跳转和行列定位。
 - **响应更可读**：Raw 响应视图会高亮状态行、header、JSON 和 HTML；HTML 响应还可以切到内置 Preview 查看渲染结果。
