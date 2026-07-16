@@ -1,6 +1,6 @@
 APP_NAME := RawSend
 CONFIGURATION ?= release
-APP_VERSION ?= 1.0.1
+APP_VERSION ?= 1.0.2
 BUNDLE_ID ?= com.rawsend.app
 CODESIGN_IDENTITY ?= -
 PKG_SIGN_IDENTITY ?=
