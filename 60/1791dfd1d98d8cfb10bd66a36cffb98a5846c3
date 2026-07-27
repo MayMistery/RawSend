@@ -1,0 +1,40 @@
+Checks/RawSendPerformanceChecks.swift
+  s_b9635f63efd58f::t_b9aa05ac92ea4f 55
+  s_b9635f63efd58f::t_40961f416491b5 54
+  s_b9635f63efd58f::t_198bff1d8466fa 56-58
+Sources/Features/Editor/RequestEditorView.swift
+  s_6c29246a54ce9e::t_902ecf0fa0fd52 478-484,486,489,494-496
+Tests/RawSendTests/TextHighlightPlanTests.swift
+  s_6c29246a54ce9e::t_39ee950bc52dd0 21-24,30-92
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "601791dfd1d98d8cfb10bd66a36cffb98a5846c3",
+  "prompts": {},
+  "humans": {
+    "h_85ed6c5be26be9": {
+      "author": "MayMistery <44127878+MayMistery@users.noreply.github.com>"
+    }
+  },
+  "sessions": {
+    "s_6c29246a54ce9e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fa18e-de2c-7c93-9375-75d33924031b",
+        "model": "unknown"
+      },
+      "human_author": "MayMistery <44127878+MayMistery@users.noreply.github.com>"
+    },
+    "s_b9635f63efd58f": {
+      "agent_id": {
+        "tool": "trae",
+        "id": "6a4e3b1130a57668916016f6",
+        "model": "c_o_new__max"
+      },
+      "human_author": "MayMistery <44127878+MayMistery@users.noreply.github.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
