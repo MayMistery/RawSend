@@ -121,7 +121,6 @@ struct ResponseTextView: NSViewRepresentable {
             applySearchHighlights(
                 matches: searchMatches,
                 selectedIndex: selectedIndex,
-                fullRange: fullRange,
                 textView: textView
             )
             scrollToSelectedMatchIfNeeded(
@@ -207,7 +206,6 @@ struct ResponseTextView: NSViewRepresentable {
         private func applySearchHighlights(
             matches: [SearchMatch],
             selectedIndex: Int?,
-            fullRange: NSRange,
             textView: NSTextView
         ) {
             guard let layoutManager = textView.layoutManager else { return }
@@ -215,7 +213,7 @@ struct ResponseTextView: NSViewRepresentable {
                 previousSearchMatches: appliedSearchMatches,
                 currentSearchMatches: matches,
                 selectedIndex: selectedIndex,
-                fullTextRange: fullRange
+                sourceText: textView.string
             )
 
             for range in plan.searchRangesToClear {
@@ -243,10 +241,11 @@ struct ResponseTextView: NSViewRepresentable {
             }
 
             let match = matches[selectedIndex]
-            guard appliedSelectedSearchID != match.id else { return }
+            guard let validRange = TextHighlightPlan.validRange(for: match, in: textView.string),
+                  appliedSelectedSearchID != match.id else { return }
             appliedSelectedSearchID = match.id
-            textView.setSelectedRange(match.range)
-            TextViewNavigator.center(match.range, in: textView)
+            textView.setSelectedRange(validRange)
+            TextViewNavigator.center(validRange, in: textView)
         }
 
         private func jsonTokens(in text: String) -> [JSONSyntaxToken] {

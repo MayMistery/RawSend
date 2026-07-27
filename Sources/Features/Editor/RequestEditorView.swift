@@ -475,21 +475,25 @@ struct RawTextEditor: NSViewRepresentable {
             }
 
             // 高亮搜索结果
-            for (index, match) in parent.searchMatches.enumerated() {
-                let isSelected = index == parent.selectedSearchMatchIndex
+            let searchPlan = TextHighlightPlan.make(
+                previousSearchMatches: [],
+                currentSearchMatches: parent.searchMatches,
+                selectedIndex: parent.selectedSearchMatchIndex,
+                sourceText: text
+            )
+            for item in searchPlan.searchRangesToApply {
                 storage.addAttributes([
-                    .backgroundColor: isSelected
+                    .backgroundColor: item.isSelected
                         ? NSColor.systemYellow.withAlphaComponent(0.65)
                         : NSColor.systemYellow.withAlphaComponent(0.28)
-                ], range: match.range)
+                ], range: item.range)
             }
 
             storage.endEditing()
 
-            if let selectedIndex = parent.selectedSearchMatchIndex,
-               parent.searchMatches.indices.contains(selectedIndex) {
-                textView.setSelectedRange(parent.searchMatches[selectedIndex].range)
-                TextViewNavigator.center(parent.searchMatches[selectedIndex].range, in: textView)
+            if let selectedRange = searchPlan.searchRangesToApply.first(where: \.isSelected)?.range {
+                textView.setSelectedRange(selectedRange)
+                TextViewNavigator.center(selectedRange, in: textView)
             }
 
             PerformanceLogStore.appendIfSlow(

@@ -51,6 +51,25 @@ struct RawSendPerformanceChecks {
             return line
         }
 
+        let staleSearchMatch = SearchMatch(
+            id: "stale",
+            range: NSRange(location: 30, length: 4),
+            text: "test",
+            lineNumber: 1,
+            columnNumber: 31
+        )
+        let staleSearchPlan = TextHighlightPlan.make(
+            previousSearchMatches: [],
+            currentSearchMatches: [staleSearchMatch],
+            selectedIndex: 0,
+            sourceText: "short text"
+        )
+        expect(staleSearchPlan.searchRangesToApply.isEmpty, "stale search ranges should not be applied after text shrinks")
+        expect(
+            TextHighlightPlan.validRange(for: staleSearchMatch, in: "short text") == nil,
+            "stale search ranges should not be selected after text shrinks"
+        )
+
         let body = (0..<60_000)
             .map { #"{"id":\#($0),"ok":true}"# }
             .joined(separator: "\n")
