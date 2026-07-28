@@ -190,6 +190,21 @@ struct HTTPResponse: Identifiable {
         cachedFullResponseText
     }
 
+    /// 插件分析使用的响应文本：保留未 pretty-print 的原始 body。
+    var rawResponseText: String {
+        if archivedFullText != nil {
+            return cachedFullResponseText
+        }
+        return Self.makeFullResponseText(
+            statusCode: statusCode,
+            statusText: statusText,
+            headers: headers,
+            formattedBody: bodyString,
+            error: error,
+            debugInfo: debugInfo
+        )
+    }
+
     /// 尝试格式化 JSON
     var formattedBody: String {
         cachedFormattedBody

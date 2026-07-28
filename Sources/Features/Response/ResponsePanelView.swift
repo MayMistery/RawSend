@@ -120,6 +120,11 @@ struct SingleResponseView: View {
 
                 Divider()
 
+                PluginResultsStrip(
+                    manager: appState.pluginManager,
+                    responseID: response.id.uuidString
+                )
+
                 HStack {
                     if previewHTML != nil {
                         Picker("", selection: $displayMode) {
@@ -161,6 +166,7 @@ struct SingleResponseView: View {
                         searchMatches: matches,
                         selectedSearchMatchIndex: appState.selectedResponseSearchIndex,
                         riskHighlights: appState.riskHighlights.filter { $0.source == .response },
+                        pluginAnnotations: appState.pluginManager.annotations(for: response.id),
                         markActive: { appState.activateResponseSearchScope() }
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -208,6 +214,68 @@ struct SingleResponseView: View {
     private func openLogFile(_ debugInfo: ResponseDebugInfo) {
         let url = URL(fileURLWithPath: debugInfo.localLogPath)
         NSWorkspace.shared.activateFileViewerSelecting([url])
+    }
+}
+
+private struct PluginResultsStrip: View {
+    @ObservedObject var manager: PluginManager
+    let responseID: String
+
+    private var visibleFindings: [PluginFinding] {
+        manager.findings.filter { $0.responseID == nil || $0.responseID == responseID }
+    }
+
+    var body: some View {
+        if !visibleFindings.isEmpty || !manager.statusMessages.isEmpty {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    Image(systemName: "puzzlepiece.extension.fill")
+                        .foregroundColor(.accentColor)
+                    Text("Plugin Results")
+                        .font(.system(size: 11, weight: .semibold))
+                    Text("\(visibleFindings.count)")
+                        .font(.caption2)
+                        .padding(.horizontal, 5)
+                        .background(Color.accentColor.opacity(0.15))
+                        .clipShape(Capsule())
+                    Spacer()
+                }
+                ForEach(visibleFindings.prefix(4)) { finding in
+                    HStack(alignment: .top, spacing: 6) {
+                        Circle()
+                            .fill(findingColor(finding.severity))
+                            .frame(width: 7, height: 7)
+                            .padding(.top, 4)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(finding.title)
+                                .font(.system(size: 11, weight: .semibold))
+                            Text(finding.summary)
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                                .lineLimit(2)
+                        }
+                    }
+                }
+                ForEach(manager.statusMessages.sorted(by: { $0.key < $1.key }), id: \.key) { pluginID, message in
+                    Text("\(pluginID): \(message)")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .background(Color.accentColor.opacity(0.045))
+            Divider()
+        }
+    }
+
+    private func findingColor(_ severity: String) -> Color {
+        switch severity.lowercased() {
+        case "critical", "high": return .red
+        case "low", "info": return .blue
+        default: return .orange
+        }
     }
 }
 

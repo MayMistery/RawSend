@@ -8,6 +8,7 @@ struct ResponseTextView: NSViewRepresentable {
     let searchMatches: [SearchMatch]
     let selectedSearchMatchIndex: Int?
     var riskHighlights: [RiskHighlight] = []
+    var pluginAnnotations: [ResponseAnnotation] = []
     var markActive: () -> Void = {}
 
     func makeCoordinator() -> Coordinator {
@@ -53,7 +54,8 @@ struct ResponseTextView: NSViewRepresentable {
             searchText: searchText,
             searchMatches: searchMatches,
             selectedIndex: selectedSearchMatchIndex,
-            riskHighlights: riskHighlights
+            riskHighlights: riskHighlights,
+            pluginAnnotations: pluginAnnotations
         )
 
         return scrollView
@@ -66,7 +68,8 @@ struct ResponseTextView: NSViewRepresentable {
             searchText: searchText,
             searchMatches: searchMatches,
             selectedIndex: selectedSearchMatchIndex,
-            riskHighlights: riskHighlights
+            riskHighlights: riskHighlights,
+            pluginAnnotations: pluginAnnotations
         )
         if let textView = nsView.documentView as? ActiveTextView {
             textView.markActive = markActive
@@ -89,6 +92,7 @@ struct ResponseTextView: NSViewRepresentable {
         private var appliedText: String = ""
         private var appliedSearchMatches: [SearchMatch] = []
         private var appliedRiskRanges: [NSRange] = []
+        private var appliedPluginRanges: [NSRange] = []
         private var appliedSelectedSearchID: String?
         private var cachedJSONText: String = ""
         private var cachedJSONTokens: [JSONSyntaxToken] = []
@@ -101,7 +105,8 @@ struct ResponseTextView: NSViewRepresentable {
             searchText: String,
             searchMatches: [SearchMatch],
             selectedIndex: Int?,
-            riskHighlights: [RiskHighlight]
+            riskHighlights: [RiskHighlight],
+            pluginAnnotations: [ResponseAnnotation]
         ) {
             let started = Date()
             guard let textView else { return }
@@ -112,12 +117,14 @@ struct ResponseTextView: NSViewRepresentable {
                 appliedText = text
                 appliedSearchMatches = []
                 appliedRiskRanges = []
+                appliedPluginRanges = []
                 appliedSelectedSearchID = nil
                 applyBaseAttributes(to: textView, text: text)
             }
 
             let fullRange = NSRange(location: 0, length: (text as NSString).length)
             applyRiskHighlights(riskHighlights, lineIndex: lineIndex, fullRange: fullRange, textView: textView)
+            applyPluginAnnotations(pluginAnnotations, fullRange: fullRange, textView: textView)
             applySearchHighlights(
                 matches: searchMatches,
                 selectedIndex: selectedIndex,
@@ -137,6 +144,33 @@ struct ResponseTextView: NSViewRepresentable {
                 queryLength: (searchText as NSString).length,
                 matchCount: searchMatches.count
             )
+        }
+
+        private func applyPluginAnnotations(
+            _ annotations: [ResponseAnnotation],
+            fullRange: NSRange,
+            textView: NSTextView
+        ) {
+            guard let layoutManager = textView.layoutManager else { return }
+            for range in appliedPluginRanges {
+                layoutManager.removeTemporaryAttribute(.backgroundColor, forCharacterRange: range)
+                layoutManager.removeTemporaryAttribute(.underlineStyle, forCharacterRange: range)
+                layoutManager.removeTemporaryAttribute(.underlineColor, forCharacterRange: range)
+            }
+
+            let valid = annotations.filter {
+                $0.range.location != NSNotFound &&
+                NSIntersectionRange($0.range, fullRange).length == $0.range.length
+            }
+            for annotation in valid {
+                let color = Self.annotationColor(for: annotation.severity)
+                layoutManager.addTemporaryAttributes([
+                    .backgroundColor: color.withAlphaComponent(0.22),
+                    .underlineStyle: NSUnderlineStyle.thick.rawValue,
+                    .underlineColor: color,
+                ], forCharacterRange: annotation.range)
+            }
+            appliedPluginRanges = valid.map(\.range)
         }
 
         private func applyBaseAttributes(to textView: NSTextView, text: String) {
@@ -291,6 +325,17 @@ struct ResponseTextView: NSViewRepresentable {
                 return NSColor.systemBlue.withAlphaComponent(0.12)
             default:
                 return NSColor.systemOrange.withAlphaComponent(0.16)
+            }
+        }
+
+        private static func annotationColor(for severity: String) -> NSColor {
+            switch severity.lowercased() {
+            case "critical", "high":
+                return .systemRed
+            case "low", "info":
+                return .systemBlue
+            default:
+                return .systemOrange
             }
         }
 

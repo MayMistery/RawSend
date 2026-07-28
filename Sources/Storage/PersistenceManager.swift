@@ -7,9 +7,13 @@ class PersistenceManager {
     private let baseURL: URL
     private let ioQueue = DispatchQueue(label: "com.rawsend.persistence", qos: .utility)
 
-    private init() {
+    private convenience init() {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        baseURL = appSupport.appendingPathComponent("RawSend", isDirectory: true)
+        self.init(baseURL: appSupport.appendingPathComponent("RawSend", isDirectory: true))
+    }
+
+    init(baseURL: URL) {
+        self.baseURL = baseURL
         try? FileManager.default.createDirectory(at: baseURL, withIntermediateDirectories: true)
     }
 
@@ -60,6 +64,16 @@ class PersistenceManager {
 
     func savePreferences(_ prefs: AppPreferences) {
         save(prefs, to: "preferences.json")
+    }
+
+    // MARK: - Plugins
+
+    func loadPluginStates() -> [String: PluginState] {
+        load(from: "plugins.json") ?? [:]
+    }
+
+    func savePluginStates(_ states: [String: PluginState]) {
+        save(states, to: "plugins.json")
     }
 
     // MARK: - Private

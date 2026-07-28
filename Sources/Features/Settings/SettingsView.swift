@@ -11,12 +11,14 @@ struct SettingsView: View {
     enum SettingsTab: CaseIterable {
         case defaultHeaders
         case environments
+        case plugins
         case general
 
         var icon: String {
             switch self {
             case .defaultHeaders: return "list.bullet.rectangle"
             case .environments: return "curlybraces"
+            case .plugins: return "puzzlepiece.extension"
             case .general: return "gearshape"
             }
         }
@@ -25,6 +27,7 @@ struct SettingsView: View {
             switch self {
             case .defaultHeaders: return Localizer.text(.defaultHeaders, language: language)
             case .environments: return Localizer.text(.environments, language: language)
+            case .plugins: return "Plugins"
             case .general: return Localizer.text(.general, language: language)
             }
         }
@@ -71,6 +74,8 @@ struct SettingsView: View {
                     DefaultHeadersSettingsView()
                 case .environments:
                     EnvironmentsSettingsView()
+                case .plugins:
+                    PluginsSettingsView(manager: appState.pluginManager)
                 case .general:
                     GeneralSettingsView()
                 }
@@ -80,6 +85,221 @@ struct SettingsView: View {
         .frame(width: 760, height: 480)
         .onDisappear {
             appState.saveAll()
+        }
+    }
+}
+
+// MARK: - Plugins
+
+struct PluginsSettingsView: View {
+    @ObservedObject var manager: PluginManager
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("External Plugins")
+                        .font(.headline)
+                    Text("~/Library/Application Support/RawSend/Plugins")
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundColor(.secondary)
+                }
+                Spacer()
+                Button {
+                    Task { await manager.reload() }
+                } label: {
+                    Label("Reload", systemImage: "arrow.clockwise")
+                }
+            }
+
+            if manager.plugins.isEmpty {
+                VStack(spacing: 8) {
+                    Image(systemName: "puzzlepiece.extension")
+                        .font(.system(size: 28))
+                        .foregroundColor(.secondary)
+                    Text("No external plugins installed")
+                        .foregroundColor(.secondary)
+                    Text("RawSend never loads plugins from inside the application bundle.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ScrollView {
+                    VStack(spacing: 10) {
+                        ForEach(manager.plugins) { plugin in
+                            pluginCard(plugin)
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+            }
+
+            if !manager.discoveryDiagnostics.isEmpty {
+                Divider()
+                ForEach(manager.discoveryDiagnostics, id: \.self) { diagnostic in
+                    Label(diagnostic, systemImage: "exclamationmark.triangle")
+                        .font(.caption)
+                        .foregroundColor(.orange)
+                }
+            }
+        }
+        .padding(20)
+    }
+
+    private func pluginCard(_ plugin: PluginDescriptor) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Toggle(
+                    isOn: Binding(
+                        get: { plugin.state.isEnabled },
+                        set: { manager.setEnabled($0, pluginID: plugin.id) }
+                    )
+                ) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(plugin.manifest.name)
+                            .font(.system(size: 13, weight: .semibold))
+                        Text("\(plugin.id) · \(plugin.manifest.version)")
+                            .font(.system(size: 10, design: .monospaced))
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .toggleStyle(.switch)
+                Spacer()
+                Text(plugin.status.rawValue)
+                    .font(.caption)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3)
+                    .background(statusColor(plugin.status).opacity(0.15))
+                    .foregroundColor(statusColor(plugin.status))
+                    .clipShape(Capsule())
+            }
+
+            if let description = plugin.manifest.description {
+                Text(description)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            Text(plugin.manifest.runtime.kind.rawValue + " · " + plugin.manifest.hooks.joined(separator: ", "))
+                .font(.system(size: 10, design: .monospaced))
+                .foregroundColor(.secondary)
+
+            if !plugin.manifest.permissions.isEmpty {
+                Text("Permissions: " + plugin.manifest.permissions.joined(separator: ", "))
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                    .lineLimit(2)
+            }
+            if !plugin.state.settings.isEmpty {
+                Divider()
+                ForEach(plugin.state.settings.keys.sorted(), id: \.self) { key in
+                    if let value = plugin.state.settings[key] {
+                        PluginSettingEditor(
+                            manager: manager,
+                            pluginID: plugin.id,
+                            key: key,
+                            value: value
+                        )
+                    }
+                }
+            }
+            if let diagnostic = plugin.diagnostic {
+                Text(diagnostic)
+                    .font(.caption)
+                    .foregroundColor(.red)
+                    .textSelection(.enabled)
+            }
+        }
+        .padding(12)
+        .background(Color(nsColor: .controlBackgroundColor))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color(nsColor: .separatorColor), lineWidth: 0.5)
+        )
+    }
+
+    private func statusColor(_ status: PluginStatus) -> Color {
+        switch status {
+        case .running: return .green
+        case .failed, .incompatible: return .red
+        case .ready: return .orange
+        case .disabled: return .secondary
+        }
+    }
+}
+
+private struct PluginSettingEditor: View {
+    @ObservedObject var manager: PluginManager
+    let pluginID: String
+    let key: String
+    let value: JSONValue
+    @State private var text: String
+
+    init(manager: PluginManager, pluginID: String, key: String, value: JSONValue) {
+        self.manager = manager
+        self.pluginID = pluginID
+        self.key = key
+        self.value = value
+        _text = State(initialValue: Self.render(value))
+    }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Text(key)
+                .font(.system(size: 10, design: .monospaced))
+                .foregroundColor(.secondary)
+                .frame(width: 150, alignment: .leading)
+            if case let .bool(enabled) = value {
+                Toggle(
+                    "",
+                    isOn: Binding(
+                        get: { enabled },
+                        set: { manager.updateSetting(.bool($0), key: key, pluginID: pluginID) }
+                    )
+                )
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .scaleEffect(0.75)
+                Spacer()
+            } else {
+                TextField("", text: $text)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(size: 10, design: .monospaced))
+                    .onSubmit(commit)
+                Button("Apply", action: commit)
+                    .font(.caption)
+            }
+        }
+    }
+
+    private func commit() {
+        switch value {
+        case .string:
+            manager.updateSetting(.string(text), key: key, pluginID: pluginID)
+        case .number:
+            if let number = Double(text) {
+                manager.updateSetting(.number(number), key: key, pluginID: pluginID)
+            }
+        case .array, .object, .null:
+            if let data = text.data(using: .utf8),
+               let parsed = try? JSONDecoder().decode(JSONValue.self, from: data) {
+                manager.updateSetting(parsed, key: key, pluginID: pluginID)
+            }
+        case .bool:
+            break
+        }
+    }
+
+    private static func render(_ value: JSONValue) -> String {
+        switch value {
+        case let .string(text): return text
+        case let .number(number): return String(number)
+        case let .bool(value): return String(value)
+        case .null: return "null"
+        case .array, .object:
+            guard let data = try? JSONEncoder().encode(value) else { return "" }
+            return String(data: data, encoding: .utf8) ?? ""
         }
     }
 }

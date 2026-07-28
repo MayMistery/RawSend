@@ -93,13 +93,13 @@ RawSend 仓库只发布通用产品默认值。组织特定的默认 header、�
 Apple Silicon：
 
 ```bash
-sudo installer -pkg RawSend-1.0.1-macos-arm64.pkg -target /
+sudo installer -pkg RawSend-1.1.0-macos-arm64.pkg -target /
 ```
 
 Intel Mac：
 
 ```bash
-sudo installer -pkg RawSend-1.0.1-macos-x86_64.pkg -target /
+sudo installer -pkg RawSend-1.1.0-macos-x86_64.pkg -target /
 ```
 
 安装后应用位于：
@@ -111,8 +111,8 @@ sudo installer -pkg RawSend-1.0.1-macos-x86_64.pkg -target /
 如果没有可用 Developer ID 证书，release 包可能没有正式签名。macOS 拦截时可以显式移除 quarantine：
 
 ```bash
-sudo xattr -d com.apple.quarantine RawSend-1.0.1-macos-arm64.pkg
-sudo installer -pkg RawSend-1.0.1-macos-arm64.pkg -target /
+sudo xattr -d com.apple.quarantine RawSend-1.1.0-macos-arm64.pkg
+sudo installer -pkg RawSend-1.1.0-macos-arm64.pkg -target /
 sudo xattr -dr com.apple.quarantine /Applications/RawSend.app
 ```
 
@@ -177,6 +177,24 @@ make codex-check
 ```
 
 设置页只需要填写用户 prompt。系统 prompt 由 RawSend 内置，用于约束 Codex 输出风险行、建议关键词和可执行的划掉动作。
+
+## 外置插件
+
+RawSend 1.1 提供版本化的外置插件协议，支持：
+
+- Python 或其他独立进程通过 Content-Length framed JSON-RPC 运行。
+- Go、Rust、C/C++ 等通过进程协议接入。
+- 可信 Native 插件通过稳定 C ABI 和 macOS dylib 接入；Go Native 插件使用 `-buildmode=c-shared`。
+- 插件读取真实发送请求、枚举 Query/Form/JSON 字段、声明请求变异、分析原始响应并发布精确高亮与结构化 Finding。
+
+插件只从以下外部目录发现：
+
+```text
+~/Library/Application Support/RawSend/Plugins/
+/Library/Application Support/RawSend/Plugins/
+```
+
+公开应用包不会内置或从 `.app` 内加载插件。插件包规范、Python/Go SDK 和 C ABI 头文件见 [`PluginSDK`](PluginSDK/README.md)。Native dylib 与主进程共享地址空间，仅应加载可信、已签名的插件；普通插件优先使用进程模式。
 
 ## 隐私
 

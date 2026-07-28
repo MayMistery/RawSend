@@ -1,6 +1,6 @@
 APP_NAME := RawSend
 CONFIGURATION ?= release
-APP_VERSION ?= 1.0.2
+APP_VERSION ?= 1.1.0
 BUNDLE_ID ?= com.rawsend.app
 CODESIGN_IDENTITY ?= -
 PKG_SIGN_IDENTITY ?=
@@ -19,12 +19,13 @@ ARCH_APP_BUNDLE := $(DIST_DIR)/$(ARCH)/$(APP_NAME).app
 CHECK_BUILD_DIR := .build/checks
 CODEX_E2E_BINARY := $(CHECK_BUILD_DIR)/RawSendCodexE2E
 PERFORMANCE_CHECK_BINARY := $(CHECK_BUILD_DIR)/RawSendPerformanceChecks
+PLUGIN_CHECK_BINARY := $(CHECK_BUILD_DIR)/RawSendPluginE2E
 CONTENTS_DIR := $(APP_BUNDLE)/Contents
 MACOS_DIR := $(CONTENTS_DIR)/MacOS
 RESOURCES_DIR := $(CONTENTS_DIR)/Resources
 INSTALL_DIR ?= /Applications
 
-.PHONY: build check performance-check codex-check app app-arch package-arch release install run clean
+.PHONY: build check performance-check plugin-check codex-check app app-arch package-arch release release-content-check install run clean
 
 PERFORMANCE_CHECK_SOURCES := \
 	Sources/Models/HeaderLine.swift \
@@ -57,17 +58,51 @@ CODEX_E2E_SOURCES := \
 	Sources/Core/CodexService.swift \
 	Checks/RawSendCodexE2E.swift
 
+PLUGIN_CHECK_SOURCES := \
+	Sources/Models/HeaderLine.swift \
+	Sources/Models/QueryParameter.swift \
+	Sources/Models/HTTPRequest.swift \
+	Sources/Models/HTTPResponse.swift \
+	Sources/Models/HistoryItem.swift \
+	Sources/Models/Environment.swift \
+	Sources/Core/Localization.swift \
+	Sources/Core/PerformanceLogStore.swift \
+	Sources/Core/TextLineIndex.swift \
+	Sources/Core/RequestParser.swift \
+	Sources/Core/VariableEngine.swift \
+	Sources/Core/HeaderInspector.swift \
+	Sources/Core/QueryParameterInspector.swift \
+	Sources/Core/ErrorLogStore.swift \
+	Sources/Core/RequestSender.swift \
+	Sources/Storage/PersistenceManager.swift \
+	Sources/Plugins/PluginModels.swift \
+	Sources/Plugins/PluginManifestLoader.swift \
+	Sources/Plugins/RequestFieldExtractor.swift \
+	Sources/Plugins/PluginRPC.swift \
+	Sources/Plugins/ProcessPluginRuntime.swift \
+	Sources/Plugins/NativePluginRuntime.swift \
+	Sources/Plugins/PluginManager.swift \
+	Checks/RawSendPluginE2E.swift
+
 build:
 	swift build -c $(CONFIGURATION)
 
 check:
 	swift test
 	$(MAKE) performance-check
+	$(MAKE) plugin-check
 
 performance-check:
 	mkdir -p "$(CHECK_BUILD_DIR)"
 	swiftc $(PERFORMANCE_CHECK_SOURCES) -o "$(PERFORMANCE_CHECK_BINARY)"
 	"$(PERFORMANCE_CHECK_BINARY)"
+
+plugin-check:
+	mkdir -p "$(CHECK_BUILD_DIR)"
+	swiftc -parse-as-library $(PLUGIN_CHECK_SOURCES) -o "$(PLUGIN_CHECK_BINARY)"
+	"$(PLUGIN_CHECK_BINARY)"
+	cd PluginSDK/go && go test ./...
+	python3 -c 'compile(open("PluginSDK/python/rawsend_plugin.py", encoding="utf-8").read(), "rawsend_plugin.py", "exec")'
 
 codex-check:
 	mkdir -p "$(CHECK_BUILD_DIR)"
@@ -180,6 +215,13 @@ release:
 	$(MAKE) package-arch ARCH=arm64
 	$(MAKE) package-arch ARCH=x86_64
 	@echo "Release packages are in $(PKG_DIR)"
+
+release-content-check: app
+	@if find "$(APP_BUNDLE)" -type f \( -name '*.rawsendplugin' -o -name '*.dylib' -o -name 'SensitiveInfoCheck.py' -o -name 'generate_callback.sh' -o -name 'verify_callback.sh' \) | grep -q .; then \
+		echo "Internal plugin content leaked into $(APP_BUNDLE)"; \
+		exit 1; \
+	fi
+	@echo "Release content check passed: no plugin payloads in $(APP_BUNDLE)"
 
 install: app
 	rm -rf "$(INSTALL_DIR)/$(APP_NAME).app"

@@ -1,4 +1,5 @@
 import SwiftUI
+import Combine
 
 /// 全局应用状态
 @MainActor
@@ -53,6 +54,9 @@ class AppState: ObservableObject {
     @Published var isCodexRunning: Bool = false
     @Published var codexErrorMessage: String?
     @Published var riskHighlights: [RiskHighlight] = []
+
+    // 外置插件
+    let pluginManager = PluginManager()
 
     // 偏好
     @Published var preferences: AppPreferences = AppPreferences()
@@ -123,8 +127,12 @@ class AppState: ObservableObject {
 
     private let sender = RequestSender()
     private let codexService = CodexService()
+    private var pluginChangeCancellable: AnyCancellable?
 
     init() {
+        pluginChangeCancellable = pluginManager.objectWillChange.sink { [weak self] _ in
+            self?.objectWillChange.send()
+        }
         loadData()
     }
 
@@ -138,6 +146,7 @@ class AppState: ObservableObject {
         updateParseStatus()
         updateRequestSearchMatches(resetSelection: true)
         Task {
+            await pluginManager.reload()
             let loaded = await Task.detached(priority: .userInitiated) {
                 PersistenceManager.shared.loadHistory()
             }.value
@@ -193,6 +202,7 @@ class AppState: ObservableObject {
         httpsResponse = nil
         responseSearchMatches = []
         selectedResponseSearchIndex = nil
+        pluginManager.clearResults()
 
         // 检查是否为 cURL 命令（发送前的兜底转换）
         var textToSend = rawText
@@ -224,25 +234,75 @@ class AppState: ObservableObject {
             sendPreferences.followRedirects = followRedirectsOverride
         }
 
+        let schemes = [
+            sendHTTP ? "http" : nil,
+            sendHTTPS ? "https" : nil,
+        ].compactMap { $0 }
+
         Task {
-            let result = await sender.send(
-                request: request,
+            guard let preparedRequest = await sender.prepare(
                 rawText: textToSend,
-                sendHTTP: sendHTTP,
-                sendHTTPS: sendHTTPS,
                 environment: selectedEnvironment,
                 defaultHeaders: defaultHeaders,
-                preferences: sendPreferences,
                 manuallyStruckHeaderIDs: manuallyStruckHeaderIDs,
                 manuallyStruckQueryParameterIDs: manuallyStruckQueryParameterIDs,
                 redactionKeywords: preferences.redactionKeywords,
                 redactMatchingHeaders: preferences.redactMatchingHeaders
-            )
+            ) else {
+                isSending = false
+                return
+            }
 
-            httpResponse = result.httpResponse
-            httpsResponse = result.httpsResponse
+            let plannedVariants = await pluginManager.prepareSend(
+                request: preparedRequest,
+                schemes: schemes
+            )
+            let baseline = await sender.sendPrepared(
+                preparedRequest,
+                schemes: schemes,
+                preferences: sendPreferences
+            )
+            httpResponse = baseline.first { $0.scheme == "http" }?.response
+            httpsResponse = baseline.first { $0.scheme == "https" }?.response
+            updateHistoryResponses(id: historyID, http: httpResponse, https: httpsResponse)
+
+            var variantExchanges: [RequestSender.SentExchange] = []
+            for planned in plannedVariants {
+                do {
+                    let mutated = try RequestFieldExtractor.applying(
+                        planned.variant.mutations,
+                        to: preparedRequest
+                    )
+                    let variantSchemes: [String]
+                    if let scheme = planned.variant.scheme, schemes.contains(scheme) {
+                        variantSchemes = [scheme]
+                    } else if planned.variant.scheme == nil {
+                        variantSchemes = schemes
+                    } else {
+                        continue
+                    }
+                    let exchanges = await sender.sendPrepared(
+                        mutated,
+                        schemes: variantSchemes,
+                        preferences: sendPreferences,
+                        originPluginID: planned.pluginID,
+                        variantID: planned.variant.id,
+                        metadata: planned.variant.metadata
+                    )
+                    variantExchanges.append(contentsOf: exchanges)
+                } catch {
+                    continue
+                }
+            }
+            await pluginManager.analyze(exchanges: baseline)
+            if !variantExchanges.isEmpty {
+                await pluginManager.analyze(exchanges: variantExchanges)
+            }
+            await pluginManager.completeBatch(
+                baseline: baseline,
+                variants: variantExchanges
+            )
             isSending = false
-            updateHistoryResponses(id: historyID, http: result.httpResponse, https: result.httpsResponse)
 
             // 自动选择有结果的 Tab
             if sendHTTPS && !sendHTTP {

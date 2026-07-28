@@ -93,13 +93,13 @@ Download the latest package from [GitHub Releases](https://github.com/MayMistery
 Apple Silicon:
 
 ```bash
-sudo installer -pkg RawSend-1.0.1-macos-arm64.pkg -target /
+sudo installer -pkg RawSend-1.1.0-macos-arm64.pkg -target /
 ```
 
 Intel Mac:
 
 ```bash
-sudo installer -pkg RawSend-1.0.1-macos-x86_64.pkg -target /
+sudo installer -pkg RawSend-1.1.0-macos-x86_64.pkg -target /
 ```
 
 The app is installed to:
@@ -111,8 +111,8 @@ The app is installed to:
 The release packages may be unsigned if no Developer ID certificate is available. If macOS blocks the package or app, remove quarantine explicitly:
 
 ```bash
-sudo xattr -d com.apple.quarantine RawSend-1.0.1-macos-arm64.pkg
-sudo installer -pkg RawSend-1.0.1-macos-arm64.pkg -target /
+sudo xattr -d com.apple.quarantine RawSend-1.1.0-macos-arm64.pkg
+sudo installer -pkg RawSend-1.1.0-macos-arm64.pkg -target /
 sudo xattr -dr com.apple.quarantine /Applications/RawSend.app
 ```
 
@@ -177,6 +177,24 @@ make codex-check
 ```
 
 The Settings page only asks for your user prompt. RawSend owns the system prompt and expects structured output for risk lines, suggested keywords, and executable strike actions.
+
+## External plugins
+
+RawSend 1.1 provides a versioned external plugin protocol:
+
+- Python and other process plugins use Content-Length framed JSON-RPC.
+- Go, Rust, C, and C++ can use the process protocol.
+- Trusted native plugins can use the stable C ABI and a macOS dylib; native Go plugins use `-buildmode=c-shared`.
+- Plugins can inspect the actual sent request, enumerate Query/Form/JSON fields, declare request variants, analyze raw responses, and publish exact annotations and structured findings.
+
+Plugins are discovered only from:
+
+```text
+~/Library/Application Support/RawSend/Plugins/
+/Library/Application Support/RawSend/Plugins/
+```
+
+The public application bundle never embeds or loads plugins from inside the `.app`. See [`PluginSDK`](PluginSDK/README.md) for the package manifest, Python/Go SDKs, and C ABI. A native dylib shares RawSend's process and should only be used for trusted, signed plugins; process plugins are the recommended default.
 
 ## Privacy
 

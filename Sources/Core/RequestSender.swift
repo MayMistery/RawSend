@@ -3,6 +3,34 @@ import Foundation
 /// 请求发送引擎：支持并行双发 HTTP/HTTPS
 actor RequestSender {
 
+    struct SentExchange {
+        let id: UUID
+        let scheme: String
+        let request: HTTPRequest
+        let response: HTTPResponse
+        let originPluginID: String?
+        let variantID: String?
+        let metadata: [String: String]
+
+        init(
+            id: UUID = UUID(),
+            scheme: String,
+            request: HTTPRequest,
+            response: HTTPResponse,
+            originPluginID: String? = nil,
+            variantID: String? = nil,
+            metadata: [String: String] = [:]
+        ) {
+            self.id = id
+            self.scheme = scheme
+            self.request = request
+            self.response = response
+            self.originPluginID = originPluginID
+            self.variantID = variantID
+            self.metadata = metadata
+        }
+    }
+
     /// 发送结果
     struct SendResult {
         let httpResponse: HTTPResponse?
@@ -23,13 +51,49 @@ actor RequestSender {
         redactionKeywords: [String] = [],
         redactMatchingHeaders: Bool = true
     ) async -> SendResult {
+        guard let finalRequest = prepare(
+            rawText: rawText,
+            environment: environment,
+            defaultHeaders: defaultHeaders,
+            manuallyStruckHeaderIDs: manuallyStruckHeaderIDs,
+            manuallyStruckQueryParameterIDs: manuallyStruckQueryParameterIDs,
+            redactionKeywords: redactionKeywords,
+            redactMatchingHeaders: redactMatchingHeaders
+        ) else {
+            let err = HTTPResponse.error(Localizer.text(.invalidRawRequest, language: preferences.appLanguage))
+            return SendResult(httpResponse: sendHTTP ? err : nil, httpsResponse: sendHTTPS ? err : nil)
+        }
+
+        let schemes = [
+            sendHTTP ? "http" : nil,
+            sendHTTPS ? "https" : nil,
+        ].compactMap { $0 }
+        let exchanges = await sendPrepared(
+            finalRequest,
+            schemes: schemes,
+            preferences: preferences
+        )
+        return SendResult(
+            httpResponse: exchanges.first { $0.scheme == "http" }?.response,
+            httpsResponse: exchanges.first { $0.scheme == "https" }?.response
+        )
+    }
+
+    func prepare(
+        rawText: String,
+        environment: Environment?,
+        defaultHeaders: [DefaultHeader],
+        manuallyStruckHeaderIDs: Set<HeaderLine.ID> = [],
+        manuallyStruckQueryParameterIDs: Set<QueryParameter.ID> = [],
+        redactionKeywords: [String] = [],
+        redactMatchingHeaders: Bool = true
+    ) -> HTTPRequest? {
         // 1. 变量替换
         let resolvedText = VariableEngine.resolve(rawText, environment: environment)
 
         // 2. 重新解析（变量替换后可能改变了 host 等）
         guard var resolved = RequestParser.parse(resolvedText) else {
-            let err = HTTPResponse.error(Localizer.text(.invalidRawRequest, language: preferences.appLanguage))
-            return SendResult(httpResponse: sendHTTP ? err : nil, httpsResponse: sendHTTPS ? err : nil)
+            return nil
         }
 
         // 3. 注入默认头（不覆盖已有同名头）
@@ -41,36 +105,51 @@ actor RequestSender {
             }
         }
 
-        // 4. 计算 Content-Length
-        if !resolved.body.isEmpty {
-            let bodyLength = resolved.body.data(using: .utf8)?.count ?? 0
-            // 移除已有的 Content-Length
-            resolved.headers.removeAll(where: { $0.0.lowercased() == "content-length" })
-            resolved.headers.append(("Content-Length", String(bodyLength)))
-        } else if ["POST", "PUT", "PATCH"].contains(resolved.method.uppercased()) {
-            resolved.headers.removeAll(where: { $0.0.lowercased() == "content-length" })
-            resolved.headers.append(("Content-Length", "0"))
-        }
-
-        // 5. 过滤被划掉的 Header
+        // 4. 过滤被划掉的 Header / Query 参数
         let headerFilteredRequest = HeaderInspector.filteredRequest(
             resolved,
             manuallyStruckIDs: manuallyStruckHeaderIDs,
             keywords: redactionKeywords,
             redactMatchingKeywords: redactMatchingHeaders
         )
-        let finalRequest = QueryParameterInspector.filteredRequest(
+        let filtered = QueryParameterInspector.filteredRequest(
             headerFilteredRequest,
             manuallyStruckIDs: manuallyStruckQueryParameterIDs,
             keywords: redactionKeywords,
             redactMatchingKeywords: redactMatchingHeaders
         )
+        // 插件可能继续改写 body；发送前和每次变异后都由同一处重算。
+        return RequestFieldExtractor.recomputingContentLength(filtered)
+    }
 
-        // 6. 并行发送
-        async let httpResult: HTTPResponse? = sendHTTP ? sendRequest(finalRequest, scheme: "http", preferences: preferences) : nil
-        async let httpsResult: HTTPResponse? = sendHTTPS ? sendRequest(finalRequest, scheme: "https", preferences: preferences) : nil
-
-        return SendResult(httpResponse: await httpResult, httpsResponse: await httpsResult)
+    func sendPrepared(
+        _ request: HTTPRequest,
+        schemes: [String],
+        preferences: AppPreferences,
+        originPluginID: String? = nil,
+        variantID: String? = nil,
+        metadata: [String: String] = [:]
+    ) async -> [SentExchange] {
+        await withTaskGroup(of: SentExchange?.self) { group in
+            for scheme in schemes where scheme == "http" || scheme == "https" {
+                group.addTask {
+                    let response = await self.sendRequest(request, scheme: scheme, preferences: preferences)
+                    return SentExchange(
+                        scheme: scheme,
+                        request: request,
+                        response: response,
+                        originPluginID: originPluginID,
+                        variantID: variantID,
+                        metadata: metadata
+                    )
+                }
+            }
+            var exchanges: [SentExchange] = []
+            for await exchange in group {
+                if let exchange { exchanges.append(exchange) }
+            }
+            return exchanges.sorted { $0.scheme < $1.scheme }
+        }
     }
 
     /// 发送单个请求

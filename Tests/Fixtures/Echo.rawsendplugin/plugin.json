@@ -1,0 +1,29 @@
+{
+  "manifest_version": 1,
+  "id": "com.rawsend.tests.echo",
+  "name": "Echo Test Plugin",
+  "version": "1.0.0",
+  "description": "Generic process-runtime fixture.",
+  "host_api": {
+    "major": 1,
+    "minor": 0
+  },
+  "runtime": {
+    "kind": "python",
+    "entrypoint": "main.py",
+    "interpreter": "python3"
+  },
+  "hooks": [
+    "send.plan",
+    "exchange.completed"
+  ],
+  "permissions": [
+    "request.read.actual",
+    "response.read.raw",
+    "ui.annotations.write",
+    "ui.status.write",
+    "findings.write"
+  ],
+  "default_enabled": true,
+  "settings": {}
+}
